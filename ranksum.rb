@@ -56,22 +56,19 @@ module Ranksum
 
       # isr = [{:idx=x, :sample=y, :rank=z}, ..., {:id=xn, :sample=yn, :rank=zn}]
       isr = [] 
-      i = 0
+      i = 1
       sample.each { |e|
-          i = i+1
-          hash = Hash.new
-          hash[:idx] = i
-          hash[:sample] = e
-          hash[:rank] = 0
+          hash = Hash[*[:idx, i, :sample, e, :rank, 0]]
           isr << hash
+          i = i+1
       }
 
       # sort by sample
       isr.sort_by!{ |m| m[:sample] }
-      i = 0
+      i = 1
       isr.each { |e|
-        i = i+1
         e[:rank] = i
+        i = i+1
       }
 
       # sort by idx
