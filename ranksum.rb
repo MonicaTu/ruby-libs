@@ -1,5 +1,3 @@
-#TODO: Give ranks for the same sample values.
-
 module Ranksum
 
   def self.wilcoxon(x,y,varargin)
@@ -37,7 +35,7 @@ module Ranksum
         sample << s
       }
       ranks = tiedrank(sample)
-      xrank = ranks.slice(1, ns)
+      xrank = ranks.slice(0, ns)
       w = xrank.inject(:+)
       # w = xrank.inject{|sum,x| sum + x }
 
@@ -71,6 +69,63 @@ module Ranksum
         i = i+1
       }
 
+      # update ranks for the same samples
+      isr_last = nil
+      isr_curr = nil
+      stack = []
+      new_isr = []
+
+      isr.each { |e|
+        isr_curr = e
+        if isr_last == nil
+          isr_last = e
+        end
+
+        # stack
+        if isr_curr[:sample] != isr_last[:sample]
+          # calculate average rank
+          sum = 0.0
+          avg = 0.0
+          stack.each { |s|
+            sum = sum + s[:rank]
+          }
+          avg = sum/stack.size
+          
+          # update ranks
+          stack.each { |s|
+            s[:rank] = avg
+          }
+
+          # stack pop, add it to  new_isr 
+          stack.size.times do
+            stack.pop
+          end 
+        end
+
+        # stack push 
+        stack.push(isr_curr)
+
+        isr_last = isr_curr 
+      }
+      # stack pop (latest)
+      # calculate average rank
+      sum = 0.0
+      avg = 0.0
+      stack.each { |s|
+        sum = sum + s[:rank]
+      }
+      avg = sum/stack.size
+      
+      # update ranks
+      stack.each { |s|
+        s[:rank] = avg
+      }
+
+      # stack pop, add it to  new_isr 
+      stack.size.times do
+        stack.pop
+      end 
+
       # sort by idx
       isr.sort_by!{ |m| m[:idx] }
       isr.each { |e|
@@ -81,7 +136,7 @@ module Ranksum
     end
 
     def approximate(x, y)
-      p = 0.566
+      p = nil
 #          # use the normal approximation
 #          TODO
 #          tiescor = 2 * tieadj / ((nx+ny) * (nx+ny-1));
@@ -156,14 +211,22 @@ module Ranksum
       end
 
       cols.times do |j|
+        if j < 2
+          next
+        end
+
         if prob_row[j] == w
           return wilcoxon_ranksum_table[0][j]
         end
 
-        if prob_row[j] > w
+        if prob_row[j] > w 
           return wilcoxon_ranksum_table[0][j-1]
-        else
-          next
+        else 
+          if j < cols-1
+            next
+          else
+            return wilcoxon_ranksum_table[0][j]
+          end
         end
 
         puts "Should not be here!"
