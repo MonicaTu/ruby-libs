@@ -1,3 +1,5 @@
+#TODO: Give ranks for the same sample values.
+
 module Ranksum
 
   def self.wilcoxon(x,y,varargin)
@@ -27,8 +29,14 @@ module Ranksum
         nl = nx
       end
       # Compute the rank sum statistic based on the smaller sample
-#      ranks = tiedrank(ns, nl, w)
-      ranks = [11, 16, 13, 6, 14, 3, 12, 9, 7, 8, 5, 15, 4, 1, 10, 2] 
+      sample = []
+      smsample.each { |s|
+        sample << s
+      }
+      lgsample.each { |s|
+        sample << s
+      }
+      ranks = tiedrank(sample)
       xrank = ranks.slice(1, ns)
       w = xrank.inject(:+)
       # w = xrank.inject{|sum,x| sum + x }
@@ -43,8 +51,35 @@ module Ranksum
       return p
     end
 
-    def tiedrank(smsample, lgsample)
+    def tiedrank(sample)
       ranks = []
+
+      # isr = [{:idx=x, :sample=y, :rank=z}, ..., {:id=xn, :sample=yn, :rank=zn}]
+      isr = [] 
+      i = 0
+      sample.each { |e|
+          i = i+1
+          hash = Hash.new
+          hash[:idx] = i
+          hash[:sample] = e
+          hash[:rank] = 0
+          isr << hash
+      }
+
+      # sort by sample
+      isr.sort_by!{ |m| m[:sample] }
+      i = 0
+      isr.each { |e|
+        i = i+1
+        e[:rank] = i
+      }
+
+      # sort by idx
+      isr.sort_by!{ |m| m[:idx] }
+      isr.each { |e|
+        ranks << e[:rank]
+      }
+
       return ranks
     end
 
